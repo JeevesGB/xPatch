@@ -1,4 +1,7 @@
-# xPatch ![Version](https://img.shields.io/badge/version-0.0.1-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![GitHub issues](https://img.shields.io/github/issues/JeevesGB/xPatch)
+# xPatch 
+![Version](https://img.shields.io/badge/version-0.0.1-blue) 
+![License](https://img.shields.io/badge/license-MIT-green) 
+![GitHub issues](https://img.shields.io/github/issues/JeevesGB/xPatch)
 
 A simple command-line tool to **create and apply `.xDelta` patches for PlayStation 1 games** — perfect for ROM hacking, mod distribution, and patch management.
 
