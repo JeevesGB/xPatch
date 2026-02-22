@@ -12,7 +12,7 @@ from PyQt6.QtGui import QDesktopServices, QIcon
 from PyQt6.QtCore import QUrl
 
 VERSION = "0.0.1"
-UPDATE_URL = "https://yourwebsite.com/xpatch"   # change this
+UPDATE_URL = "https://github.com/JeevesGB/xPatch"
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and PyInstaller """
