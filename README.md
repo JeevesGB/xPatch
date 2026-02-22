@@ -7,7 +7,7 @@ This is the initial release **v0.0.1**.
 
 ---
 
-## 🚀 Features
+## Features
 
 - Create `.xDelta` patch files from original and modified PS1 game data.
 - Apply `.xDelta` patches to original game images.
@@ -16,7 +16,7 @@ This is the initial release **v0.0.1**.
 
 ---
 
-## 🧠 What is an `.xDelta` Patch?
+## What is an `.xDelta` Patch?
 
 `.xDelta` patches are **binary diff files** storing changes between two versions of a file.  
 They enable:
