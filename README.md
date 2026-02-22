@@ -32,11 +32,6 @@ They enable:
 ![GUI](img/p2.png)
 ![GUI](img/p3.png)
 
-## Clone the repository
-
-git clone https://github.com/JeevesGB/xPatch.git
-cd xPatch
-
 ## Building
 run build.bat
 
