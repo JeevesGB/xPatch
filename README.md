@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green) 
 ![GitHub issues](https://img.shields.io/github/issues/JeevesGB/xPatch)
 
-A simple command-line tool to **create and apply `.xDelta` patches for PlayStation 1 games** — perfect for ROM hacking, mod distribution, and patch management.
+A simple GUI tool to **create and apply `.xDelta` patches for PlayStation 1 games**.
 
 This is the initial release **v0.0.1**.  
 [Download Release](https://github.com/JeevesGB/xPatch/releases/tag/xPatchv0.0.1)
@@ -14,8 +14,7 @@ This is the initial release **v0.0.1**.
 
 - Create `.xDelta` patch files from original and modified PS1 game data.
 - Apply `.xDelta` patches to original game images.
-- Lightweight with minimal dependencies — easy to include in workflows.
-- Designed for modders and preservationists working with PS1 ISOs and binary diffs.
+- Easy to use interface.
 
 ---
 
