@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green) 
 ![GitHub issues](https://img.shields.io/github/issues/JeevesGB/xPatch)
 
-A simple GUI tool to **create and apply `.xDelta` patches for PlayStation 1 games**.
+A simple GUI tool to **create and apply `.xDelta` patches**.
 
 This is the initial release **v0.0.1**.  
 [Download Release](https://github.com/JeevesGB/xPatch/releases/tag/xPatchv0.0.1)
@@ -12,7 +12,7 @@ This is the initial release **v0.0.1**.
 
 ## Features
 
-- Create `.xDelta` patch files from original and modified PS1 game data.
+- Create `.xDelta` patch files from original and modified game data.
 - Apply `.xDelta` patches to original game images.
 - Easy to use interface.
 
@@ -34,6 +34,10 @@ They enable:
 ![GUI](img/p2.png)
 ![GUI](img/p3.png)
 
+## Requirements for developers
+- PyQt6
+- xDelta3.exe: create a tools folder and place inside.
+
 ## Building
 run build.bat
 
@@ -43,3 +47,5 @@ run build.bat
 
 ## Licence 
 This project is licensed under the MIT License.
+
+###### JEJCo™
