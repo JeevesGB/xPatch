@@ -8,7 +8,7 @@ from utils.paths import resource_path, find_xdelta
 from utils.checksum import calculate_hash
 from utils.files import copy_cue_file
 
-VERSION = "0.1.2"
+VERSION = "0.1.25"
 UPDATE_URL = "https://github.com/JeevesGB/xPatch"
 theme = "newver/ui/theme.qss"
 
@@ -36,11 +36,17 @@ class XPatchWindow(QWidget):
         self.create_btn = QPushButton("Create Patch")
         self.apply_btn = QPushButton("Apply Patch")
         self.create_btn.clicked.connect(lambda: self._set_mode("create"))
+        self.create_btn.setObjectName("createPatchButton")
+        self.apply_btn.setObjectName("applyPatchButton")
+        self.create_btn.setCheckable(True)
+        self.apply_btn.setCheckable(True)
+        self.create_btn.clicked.connect(lambda: self._set_mode("create"))
         self.apply_btn.clicked.connect(lambda: self._set_mode("apply"))
+        
 
-        self.help_btn = QPushButton("?")
-        self.about_btn = QPushButton("About")
-        self.help_btn.setFixedWidth(35)
+        self.help_btn = QPushButton("Help")
+        self.about_btn = QPushButton("Version")
+        self.help_btn.setFixedWidth(55)
         self.help_btn.clicked.connect(self.show_help)
         self.about_btn.clicked.connect(self.show_about)
 
@@ -104,6 +110,10 @@ class XPatchWindow(QWidget):
     def _set_mode(self, mode: str):
         self.mode = mode
         is_create = mode == "create"
+        
+        self.create_btn.setChecked(is_create)
+        self.apply_btn.setChecked(not is_create)
+        
         self.mod_edit.setEnabled(is_create)
         self.output_edit.setEnabled(not is_create)
         self.action_btn.setText(
