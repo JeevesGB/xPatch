@@ -1,20 +1,20 @@
 QWidget {
-    background-color: #001a1d;
+    background-color: #000000;
     color: #d4f5fc;
     font-family: Segoe UI;
     font-size: 10pt;
 }
 
 QLineEdit, QPlainTextEdit {
-    background-color: #297b80;
+    background-color: #3d010e;
     border: 1px solid #444;
     padding: 4px;
     border-radius: 4px;
 }
 
 QPushButton {
-    background-color: #6bbbc4;
-    border: 1px solid #001416;
+    background-color: #3d010e;
+    border: 1px solid #79021c;
     border-radius: 6px;
     padding: 8px 8px;
     font-weight: bold;
@@ -22,11 +22,11 @@ QPushButton {
 }
 
 QPushButton:hover {
-    background-color: #1e5a5e;
+    background-color: #b6042a;
 }
 
 QPushButton:pressed {
-    background-color: #2a82da;
+    background-color: #f50538;
 }
 
 
@@ -73,11 +73,11 @@ QPushButton#applyPatchButton:!checked {
 }
 
 QProgressBar {
-    border: 2px solid #297b80;
+    border: 2px solid #79021c;
     border-radius: 8px;
-    background-color: #001a1d;
+    background-color: #000000;
     text-align: center;
-    color: #9dedfa;
+    color: #f50538;
     font: bold 12px;
     height: 24px;
 }

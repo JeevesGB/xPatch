@@ -1,15 +1,19 @@
 @echo off
-echo Building xPatch v0.1.2...
+echo ========================================
+echo     Building xPatch...
+echo ========================================
 
 pyinstaller --onefile ^
     --windowed ^
     --name "xPatch" ^
     --icon "../ico.ico" ^
-    --add-data "ui/theme.qss;ui" ^
-    --add-data "../tool/xdelta3.exe;tool" ^
+    --add-data "ui;ui" ^
+    --add-data "utils;utils" ^
+    --add-data "services;services" ^
+    --add-data "tool;tool" ^
     --clean ^
     main.py
 
 echo.
-echo Build finished! Check the "dist" folder.
+echo Build completed!
 pause

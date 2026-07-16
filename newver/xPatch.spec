@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('ui/theme.qss', 'ui'), ('../tool/xdelta3.exe', 'tool')],
+    datas=[('ui', 'ui'), ('utils', 'utils'), ('services', 'services'), ('../tool/xdelta3.exe', 'tool')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

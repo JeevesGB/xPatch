@@ -10,7 +10,7 @@ from utils.files import copy_cue_file
 
 VERSION = "0.1.25"
 UPDATE_URL = "https://github.com/JeevesGB/xPatch"
-theme = "newver/ui/theme.qss"
+theme = "ui/theme.qss"
 
 class XPatchWindow(QWidget):
 
@@ -99,13 +99,18 @@ class XPatchWindow(QWidget):
 
     def _load_stylesheet(self) -> None:
         theme_path = resource_path(theme)
+        
+        print(f"Looking for theme at: {theme_path}")  # ← Add this for debugging
+        
         if theme_path.exists():
             try:
-                self.setStyleSheet(theme_path.read_text(encoding="utf-8"))
+                stylesheet = theme_path.read_text(encoding="utf-8")
+                self.setStyleSheet(stylesheet)
+                print("✓ Theme loaded successfully")
             except Exception as e:
                 print(f"Failed to load stylesheet: {e}")
         else:
-            print(f"Stylesheet not found: {theme_path}")
+            print(f"✗ Stylesheet not found: {theme_path}")
 
     def _set_mode(self, mode: str):
         self.mode = mode
