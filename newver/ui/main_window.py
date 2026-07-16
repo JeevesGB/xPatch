@@ -10,7 +10,7 @@ from utils.files import copy_cue_file
 
 VERSION = "0.1.2"
 UPDATE_URL = "https://github.com/JeevesGB/xPatch"
-theme = "ui/theme.qss"
+theme = "newver/ui/theme.qss"
 
 class XPatchWindow(QWidget):
 
