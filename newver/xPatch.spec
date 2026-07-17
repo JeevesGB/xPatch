@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('ui', 'ui'), ('utils', 'utils'), ('services', 'services'), ('../tool/xdelta3.exe', 'tool')],
+    datas=[('ui', 'ui'), ('utils', 'utils'), ('services', 'services'), ('tool', 'tool')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['..\\ico.ico'],
+    icon=['ico.ico'],
 )

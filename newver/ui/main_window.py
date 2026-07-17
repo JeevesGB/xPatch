@@ -11,13 +11,14 @@ from utils.files import copy_cue_file
 VERSION = "0.1.25"
 UPDATE_URL = "https://github.com/JeevesGB/xPatch"
 theme = "ui/theme.qss"
+icon_path = resource_path("ico.ico")
 
 class XPatchWindow(QWidget):
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle(f"xPatch v{VERSION}")
-        self.setWindowIcon(QIcon(str(resource_path("ico.ico"))))
+        self.setWindowIcon(QIcon(str(icon_path)))
         self._load_stylesheet()
         self.setMinimumSize(760, 620)
         self.setAcceptDrops(True)
@@ -182,21 +183,25 @@ class XPatchWindow(QWidget):
         orig = Path(self.orig_edit.text())
         patch = Path(self.patch_edit.text())
 
+        self.console.clear()
+        self.progress.setRange(0, 0)
+
         if self.mode == "create":
             mod = Path(self.mod_edit.text())
             args = ["-e", "-s", str(orig), str(mod), str(patch)]
+            self.console.appendPlainText(f"Creating xDelta patch...")
+            self.console.appendPlainText(f"Original : {orig.name} ({orig.stat().st_size:,} bytes)")
+            self.console.appendPlainText(f"Modified : {mod.name} ({mod.stat().st_size:,} bytes)")
         else:
             output = Path(self.output_edit.text())
             self.output_path = output
             self.source_size = orig.stat().st_size
             args = ["-d", "-s", str(orig), str(patch), str(output)]
+            self.console.appendPlainText(f"Applying xDelta patch...")
+            self.console.appendPlainText(f"Original : {orig.name}")
+            self.console.appendPlainText(f"Patch    : {patch.name}")
 
-            self.timer = QTimer(self)
-            self.timer.timeout.connect(self._update_progress)
-            self.timer.start(400)
-
-        self.console.clear()
-        self.progress.setRange(0, 0) 
+        self.console.appendPlainText("-" * 60)
 
         self.runner.output_received.connect(self.console.appendPlainText)
         self.runner.finished.connect(self._finished)

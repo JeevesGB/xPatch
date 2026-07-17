@@ -1,12 +1,12 @@
 # xPatch 
-![Version](https://img.shields.io/badge/version-0.0.1-blue) 
+![Version](https://img.shields.io/badge/version-0.1.25-blue) 
 ![License](https://img.shields.io/badge/license-MIT-green) 
 ![GitHub issues](https://img.shields.io/github/issues/JeevesGB/xPatch)
 
 A simple GUI tool to **create and apply `.xDelta` patches**.
 
-This is the initial release **v0.0.1**.  
-[Download Release](https://github.com/JeevesGB/xPatch/releases/tag/xPatchv0.0.1)
+This is the initial release **v0.1.25**.  
+[Download Release](https://github.com/JeevesGB/xPatch/releases/tag/xPatch0.1.25)
 
 ---
 

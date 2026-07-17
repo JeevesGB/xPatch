@@ -6,7 +6,7 @@ echo ========================================
 pyinstaller --onefile ^
     --windowed ^
     --name "xPatch" ^
-    --icon "../ico.ico" ^
+    --icon "ico.ico" ^
     --add-data "ui;ui" ^
     --add-data "utils;utils" ^
     --add-data "services;services" ^
