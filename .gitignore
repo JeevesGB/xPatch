@@ -3,3 +3,4 @@ tool
 build
 dist
 cpp/build
+resources_rc.py

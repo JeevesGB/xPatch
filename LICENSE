@@ -1,0 +1,49 @@
+MIT License (Expanded)
+
+Copyright (c) 2026 JeevesGB / JEJCo™
+Repository: xPatch (xDelta Patcher)
+
+1. Grant of License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions.
+
+2. Conditions
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+Any redistribution of the Software, modified or unmodified, must retain:
+- This license text in full
+- Attribution to the original author (JeevesGB / JEJCo™)
+- A clear indication if changes have been made to the original Software
+
+3. Third-Party Components
+
+This Software makes use of xDelta3 (https://github.com/jmacd/xdelta), which is a separate project subject to its own license. This License does not extend any rights to xDelta3 beyond what its own license permits, and users of this Software should review xDelta3's licensing terms independently before redistributing any bundled copy of it.
+
+4. No Endorsement
+
+Use of the Software does not imply endorsement, sponsorship, or approval by the Author of any derivative work, fork, or product built using it. The names "xPatch," "JeevesGB," and "JEJCo" may not be used to endorse or promote products or forks derived from this Software without prior written permission.
+
+5. Intended Use and User Responsibility
+
+xPatch is a general-purpose tool for creating and applying binary diff (.xDelta) patches. It is provided as a utility only. The Author does not condone, encourage, or take responsibility for any use of this Software that infringes the copyright of third parties, including but not limited to the unauthorized distribution of copyrighted game data, ROMs, or ISOs. Users are solely responsible for ensuring their use of this Software complies with applicable copyright law in their jurisdiction.
+
+6. No Warranty
+
+The Software is provided "as is," without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.
+
+7. Limitation of Liability
+
+In no event shall the Author or copyright holder be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the Software or the use or other dealings in the Software.
+
+8. Contributions
+
+Unless explicitly stated otherwise, any contribution intentionally submitted for inclusion in this Software (e.g. via pull request) shall be licensed under the terms of this License, without any additional terms or conditions, and the contributor confirms they have the right to submit the contribution under these terms.
+
+9. Governing Law
+
+This License shall be governed by and construed in accordance with the laws of England and Wales, without regard to conflict of law principles.
+
+10. Contact
+
+For questions regarding this License, please contact the Author at it.is.jej@gmail.com.
