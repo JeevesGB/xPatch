@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime
 
 from PyQt6.QtWidgets import (
     QWidget,
@@ -14,9 +15,11 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QDialog,
     QTextBrowser,
+    QFrame,
+    QSizePolicy,
 )
-from PyQt6.QtCore import Qt, QUrl
-from PyQt6.QtGui import QDesktopServices, QIcon
+from PyQt6.QtCore import Qt, QUrl, QTimer
+from PyQt6.QtGui import QDesktopServices, QIcon, QFont
 
 from services.xdelta_runner import XDeltaRunner
 from utils.paths import resource_path, find_xdelta
@@ -26,37 +29,85 @@ from utils.files import (
     OPEN_FILTER,
     SAVE_BIN_FILTER,
     PATCH_FILTER,
-    is_supported_file,
 )
 
-VERSION = "0.2.0"
+VERSION = "0.2.3"
 UPDATE_URL = "https://github.com/JeevesGB/xPatch"
 THEME = "ui/theme.qss"
 ICON_PATH = resource_path("ico.ico")
 
 
+def _card() -> QFrame:
+    f = QFrame()
+    f.setObjectName("card")
+    return f
+
+
 class XPatchWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle(f"xPatch v{VERSION}")
+        self.setWindowTitle(f"xPatch  v{VERSION}")
         self.setWindowIcon(QIcon(str(ICON_PATH)))
         self._load_stylesheet()
-        self.setMinimumSize(780, 640)
+        self.setMinimumSize(720, 620)
+        self.resize(780, 680)
         self.setAcceptDrops(True)
 
         self.mode = "create"
         self.output_path: Path | None = None
         self.source_size = 0
         self.runner: XDeltaRunner | None = None
+        self._progress_timer: QTimer | None = None
 
         self._init_ui()
 
-    # ------------------------------------------------------------------ UI
+    # ================================================================== UI
     def _init_ui(self) -> None:
-        layout = QVBoxLayout(self)
-        grid = QGridLayout()
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
 
-        # Mode buttons
+        # Header
+        header = QFrame()
+        header.setObjectName("headerBar")
+        header.setFixedHeight(44)
+        hdr = QHBoxLayout(header)
+        hdr.setContentsMargins(16, 0, 12, 0)
+        hdr.setSpacing(8)
+
+        title_col = QVBoxLayout()
+        title_col.setSpacing(0)
+        title_col.setContentsMargins(0, 6, 0, 6)
+        app_title = QLabel("xPatch")
+        app_title.setObjectName("appTitle")
+        app_sub = QLabel(f"v{VERSION}")
+        app_sub.setObjectName("appSubtitle")
+        title_col.addWidget(app_title)
+        title_col.addWidget(app_sub)
+        hdr.addLayout(title_col)
+        hdr.addStretch()
+
+        self.help_btn = QPushButton("Help")
+        self.about_btn = QPushButton("About")
+        for b in (self.help_btn, self.about_btn):
+            b.setObjectName("secondaryButton")
+            b.setFixedWidth(56)
+        self.help_btn.clicked.connect(self.show_help)
+        self.about_btn.clicked.connect(self.show_about)
+        hdr.addWidget(self.help_btn)
+        hdr.addWidget(self.about_btn)
+        root.addWidget(header)
+
+        # Body
+        body = QVBoxLayout()
+        body.setContentsMargins(16, 12, 16, 12)
+        body.setSpacing(10)
+        root.addLayout(body, stretch=1)
+
+        # Mode switcher
+        mode_row = QHBoxLayout()
+        mode_row.setSpacing(6)
+
         self.create_btn = QPushButton("Create Patch")
         self.apply_btn = QPushButton("Apply Patch")
         self.create_btn.setObjectName("createPatchButton")
@@ -66,30 +117,43 @@ class XPatchWindow(QWidget):
         self.create_btn.clicked.connect(lambda: self._set_mode("create"))
         self.apply_btn.clicked.connect(lambda: self._set_mode("apply"))
 
-        self.help_btn = QPushButton("Help")
-        self.about_btn = QPushButton("Version")
-        self.help_btn.setFixedWidth(55)
-        self.help_btn.clicked.connect(self.show_help)
-        self.about_btn.clicked.connect(self.show_about)
-
-        mode_row = QHBoxLayout()
         mode_row.addWidget(self.create_btn)
         mode_row.addWidget(self.apply_btn)
         mode_row.addStretch()
-        mode_row.addWidget(self.help_btn)
-        mode_row.addWidget(self.about_btn)
-        grid.addLayout(mode_row, 0, 0, 1, 3)
+        body.addLayout(mode_row)
+
+        # Files card
+        files_card = _card()
+        files_lay = QVBoxLayout(files_card)
+        files_lay.setContentsMargins(12, 10, 12, 10)
+        files_lay.setSpacing(8)
+
+        files_hdr = QLabel("FILES")
+        files_hdr.setObjectName("sectionHeader")
+        files_lay.addWidget(files_hdr)
+
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(8)
+        grid.setVerticalSpacing(6)
+        grid.setColumnStretch(1, 1)
 
         self.orig_edit = QLineEdit()
         self.mod_edit = QLineEdit()
         self.patch_edit = QLineEdit()
         self.output_edit = QLineEdit()
 
-        # Generic labels – works for .bin, .iso, .img, ROMs, etc.
-        self.lbl_orig = QLabel("Original File:")
-        self.lbl_mod = QLabel("Modified File:")
-        self.lbl_patch = QLabel("xDelta Patch:")
-        self.lbl_output = QLabel("Output File:")
+        self.orig_edit.setPlaceholderText("Original (clean) file…")
+        self.mod_edit.setPlaceholderText("Modified file…")
+        self.patch_edit.setPlaceholderText(".xdelta / .xd3 patch…")
+        self.output_edit.setPlaceholderText("Output path…")
+
+        self.lbl_orig = QLabel("Original")
+        self.lbl_mod = QLabel("Modified")
+        self.lbl_patch = QLabel("Patch")
+        self.lbl_output = QLabel("Output")
+        for lbl in (self.lbl_orig, self.lbl_mod, self.lbl_patch, self.lbl_output):
+            lbl.setObjectName("fieldLabel")
+            lbl.setFixedWidth(60)
 
         fields = [
             (self.lbl_orig, self.orig_edit),
@@ -98,40 +162,110 @@ class XPatchWindow(QWidget):
             (self.lbl_output, self.output_edit),
         ]
 
-        for row, (label, edit) in enumerate(fields, start=1):
+        for row, (label, edit) in enumerate(fields):
             btn = QPushButton("Browse")
+            btn.setObjectName("browseButton")
             btn.clicked.connect(lambda _, e=edit: self._browse(e))
-            grid.addWidget(label, row, 0)
+            grid.addWidget(label, row, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             grid.addWidget(edit, row, 1)
             grid.addWidget(btn, row, 2)
 
+        files_lay.addLayout(grid)
+        body.addWidget(files_card)
+
+        # Action row
+        action_row = QHBoxLayout()
+        action_row.setSpacing(8)
+
         self.action_btn = QPushButton("Create xDelta Patch")
+        self.action_btn.setObjectName("actionButton")
         self.action_btn.clicked.connect(self._run)
-        grid.addWidget(self.action_btn, 5, 0, 1, 3)
 
-        # Optional checksum button
-        checksum_row = QHBoxLayout()
-        self.checksum_btn = QPushButton("Calculate Checksums (Original)")
+        self.checksum_btn = QPushButton("Checksums")
+        self.checksum_btn.setObjectName("secondaryButton")
+        self.checksum_btn.setToolTip("Calculate MD5 and SHA1 of the original file")
+        self.checksum_btn.setFixedWidth(84)
         self.checksum_btn.clicked.connect(self._on_checksum)
-        checksum_row.addWidget(self.checksum_btn)
-        checksum_row.addStretch()
-        grid.addLayout(checksum_row, 6, 0, 1, 3)
 
-        layout.addLayout(grid)
+        action_row.addWidget(self.action_btn, stretch=1)
+        action_row.addWidget(self.checksum_btn)
+        body.addLayout(action_row)
+
+        # Progress card
+        prog_card = _card()
+        prog_lay = QVBoxLayout(prog_card)
+        prog_lay.setContentsMargins(12, 8, 12, 8)
+        prog_lay.setSpacing(6)
+
+        prog_top = QHBoxLayout()
+        prog_hdr = QLabel("PROGRESS")
+        prog_hdr.setObjectName("sectionHeader")
+        prog_top.addWidget(prog_hdr)
+        prog_top.addStretch()
+
+        status_wrap = QHBoxLayout()
+        status_wrap.setSpacing(3)
+        self.status_dot = QLabel("●")
+        self.status_dot.setObjectName("statusDot")
+        self.status_label = QLabel("Ready")
+        self.status_label.setObjectName("statusLabel")
+        status_wrap.addWidget(self.status_dot)
+        status_wrap.addWidget(self.status_label)
+        prog_top.addLayout(status_wrap)
+        prog_lay.addLayout(prog_top)
 
         self.progress = QProgressBar()
-        layout.addWidget(self.progress)
-        layout.addWidget(QLabel("Console Output:"))
-        self.console = QPlainTextEdit()
-        self.console.setReadOnly(True)
-        layout.addWidget(self.console)
+        self.progress.setRange(0, 100)
+        self.progress.setValue(0)
+        self.progress.setTextVisible(True)
+        self.progress.setFormat("%p%")
+        self.progress.setFixedHeight(20)
+        prog_lay.addWidget(self.progress)
+        body.addWidget(prog_card)
 
-        export_btn = QPushButton("Export Log")
-        export_btn.clicked.connect(self._export_log)
-        layout.addWidget(export_btn)
+        # Log card
+        log_card = _card()
+        log_lay = QVBoxLayout(log_card)
+        log_lay.setContentsMargins(12, 8, 12, 8)
+        log_lay.setSpacing(6)
+
+        log_top = QHBoxLayout()
+        log_hdr = QLabel("LOG")
+        log_hdr.setObjectName("sectionHeader")
+        log_top.addWidget(log_hdr)
+        log_top.addStretch()
+
+        self.clear_log_btn = QPushButton("Clear")
+        self.export_btn = QPushButton("Export")
+        for b in (self.clear_log_btn, self.export_btn):
+            b.setObjectName("secondaryButton")
+            b.setFixedWidth(56)
+        self.clear_log_btn.clicked.connect(self._clear_log)
+        self.export_btn.clicked.connect(self._export_log)
+        log_top.addWidget(self.clear_log_btn)
+        log_top.addWidget(self.export_btn)
+        log_lay.addLayout(log_top)
+
+        self.console = QPlainTextEdit()
+        self.console.setObjectName("console")
+        self.console.setReadOnly(True)
+        self.console.setMinimumHeight(160)
+        self.console.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        mono = QFont("Cascadia Code")
+        if not mono.exactMatch():
+            mono = QFont("Consolas")
+        mono.setStyleHint(QFont.StyleHint.Monospace)
+        mono.setPointSize(10)
+        self.console.setFont(mono)
+        log_lay.addWidget(self.console, stretch=1)
+        body.addWidget(log_card, stretch=1)
 
         self._set_mode("create")
+        self._log("Ready.")
 
+    # ============================================================ Helpers
     def _load_stylesheet(self) -> None:
         theme_path = resource_path(THEME)
         if theme_path.exists():
@@ -139,6 +273,72 @@ class XPatchWindow(QWidget):
                 self.setStyleSheet(theme_path.read_text(encoding="utf-8"))
             except Exception as e:
                 print(f"Failed to load stylesheet: {e}")
+
+    def _log(self, message: str, level: str = "info") -> None:
+        ts = datetime.now().strftime("%H:%M:%S")
+        prefix = {
+            "info": "  ",
+            "ok": "✓ ",
+            "warn": "! ",
+            "error": "x ",
+            "cmd": "> ",
+        }.get(level, "  ")
+        self.console.appendPlainText(f"[{ts}] {prefix}{message}")
+        sb = self.console.verticalScrollBar()
+        sb.setValue(sb.maximum())
+
+    def _clear_log(self) -> None:
+        self.console.clear()
+        self._log("Log cleared.")
+
+    def _set_status(self, text: str, state: str = "idle") -> None:
+        colors = {
+            "idle": "#555",
+            "busy": "#3b82f6",
+            "ok": "#22c55e",
+            "error": "#ef4444",
+        }
+        self.status_dot.setStyleSheet(f"color: {colors.get(state, '#555')};")
+        self.status_label.setText(text)
+
+    def _set_progress(self, value: int, indeterminate: bool = False) -> None:
+        if indeterminate:
+            self.progress.setRange(0, 0)
+            self.progress.setFormat("…")
+        else:
+            self.progress.setRange(0, 100)
+            self.progress.setValue(max(0, min(100, value)))
+            self.progress.setFormat("%p%")
+
+    def _start_progress_timer(self) -> None:
+        self._stop_progress_timer()
+        self._progress_timer = QTimer(self)
+        self._progress_timer.setInterval(250)
+        self._progress_timer.timeout.connect(self._poll_progress)
+        self._progress_timer.start()
+
+    def _stop_progress_timer(self) -> None:
+        if self._progress_timer is not None:
+            self._progress_timer.stop()
+            self._progress_timer.deleteLater()
+            self._progress_timer = None
+
+    def _poll_progress(self) -> None:
+        if self.mode != "apply" or not self.output_path or self.source_size <= 0:
+            return
+        try:
+            if self.output_path.exists():
+                size = self.output_path.stat().st_size
+                percent = min(int((size / self.source_size) * 100), 99)
+                self._set_progress(percent)
+                mb_done = size / (1024 * 1024)
+                mb_total = self.source_size / (1024 * 1024)
+                self._set_status(
+                    f"{mb_done:.1f} / {mb_total:.1f} MB  ({percent}%)",
+                    "busy",
+                )
+        except OSError:
+            pass
 
     def _set_mode(self, mode: str) -> None:
         self.mode = mode
@@ -155,8 +355,9 @@ class XPatchWindow(QWidget):
         self.action_btn.setText(
             "Create xDelta Patch" if is_create else "Apply Patch"
         )
+        self._set_status("Ready" if is_create else "Ready", "idle")
 
-    # -------------------------------------------------------------- Drag & Drop
+    # ======================================================== Drag & Drop
     def dragEnterEvent(self, event) -> None:
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
@@ -168,23 +369,23 @@ class XPatchWindow(QWidget):
                 continue
 
             suffix = path.suffix.lower()
-            # Prefer putting patch files into the patch field
             if suffix in (".xdelta", ".xd3"):
                 self.patch_edit.setText(str(path))
+                self._log(f"Dropped patch: {path.name}")
                 continue
 
             if not self.orig_edit.text():
                 self.orig_edit.setText(str(path))
+                self._log(f"Dropped original: {path.name}")
             elif self.mode == "create" and not self.mod_edit.text():
                 self.mod_edit.setText(str(path))
-            elif not self.patch_edit.text() and suffix in (".xdelta", ".xd3"):
-                self.patch_edit.setText(str(path))
+                self._log(f"Dropped modified: {path.name}")
             elif self.mode == "apply" and not self.output_edit.text():
-                # Suggest an output name next to the original
                 suggested = path.with_name(path.stem + "_patched" + path.suffix)
                 self.output_edit.setText(str(suggested))
+                self._log(f"Suggested output: {suggested.name}")
 
-    # ---------------------------------------------------------------- Browse
+    # ============================================================ Browse
     def _browse(self, edit: QLineEdit) -> None:
         if edit is self.patch_edit:
             if self.mode == "create":
@@ -206,8 +407,9 @@ class XPatchWindow(QWidget):
 
         if path:
             edit.setText(path)
+            self._log(f"Selected: {Path(path).name}")
 
-    # ------------------------------------------------------------- Validation
+    # ======================================================== Validation
     def _validate(self) -> bool:
         orig = Path(self.orig_edit.text().strip())
         if not orig.is_file():
@@ -225,8 +427,8 @@ class XPatchWindow(QWidget):
                 )
                 return False
             patch = Path(self.patch_edit.text().strip())
-            if not patch.parent.exists():
-                QMessageBox.critical(self, "Error", "Patch output folder does not exist.")
+            if not str(patch) or not patch.parent.exists():
+                QMessageBox.critical(self, "Error", "Choose a valid patch save location.")
                 return False
         else:
             patch = Path(self.patch_edit.text().strip())
@@ -234,13 +436,13 @@ class XPatchWindow(QWidget):
                 QMessageBox.critical(self, "Error", "Patch file is missing or invalid.")
                 return False
             output = Path(self.output_edit.text().strip())
-            if not output.parent.exists():
-                QMessageBox.critical(self, "Error", "Output folder does not exist.")
+            if not str(output) or not output.parent.exists():
+                QMessageBox.critical(self, "Error", "Choose a valid output location.")
                 return False
 
         return True
 
-    # ----------------------------------------------------------------- Run
+    # ================================================================ Run
     def _run(self) -> None:
         if not self._validate():
             return
@@ -261,62 +463,80 @@ class XPatchWindow(QWidget):
         orig = Path(self.orig_edit.text().strip())
         patch = Path(self.patch_edit.text().strip())
 
-        self.console.clear()
-        self.progress.setRange(0, 0)  # indeterminate
+        self.action_btn.setEnabled(False)
+        self._set_progress(0, indeterminate=True)
+        self._set_status("Starting…", "busy")
 
         self.runner = XDeltaRunner(xdelta)
-        self.runner.output_received.connect(self.console.appendPlainText)
+        self.runner.output_received.connect(self._on_runner_output)
         self.runner.finished.connect(self._finished)
 
         if self.mode == "create":
             mod = Path(self.mod_edit.text().strip())
-            # -e = encode, -s = source (original)
             args = ["-e", "-s", str(orig), str(mod), str(patch)]
-            self.console.appendPlainText("Creating xDelta patch…")
-            self.console.appendPlainText(
-                f"Original : {orig.name} ({orig.stat().st_size:,} bytes)"
-            )
-            self.console.appendPlainText(
-                f"Modified : {mod.name} ({mod.stat().st_size:,} bytes)"
-            )
-            self.console.appendPlainText(f"Patch    : {patch.name}")
+            self._log("Creating patch…", "cmd")
+            self._log(f"Original : {orig.name}  ({orig.stat().st_size:,} bytes)")
+            self._log(f"Modified : {mod.name}  ({mod.stat().st_size:,} bytes)")
+            self._log(f"Patch    : {patch.name}")
+            self._set_status("Encoding…", "busy")
         else:
             output = Path(self.output_edit.text().strip())
             self.output_path = output
             self.source_size = orig.stat().st_size
-            # -d = decode, -s = source (original)
             args = ["-d", "-s", str(orig), str(patch), str(output)]
-            self.console.appendPlainText("Applying xDelta patch…")
-            self.console.appendPlainText(f"Original : {orig.name}")
-            self.console.appendPlainText(f"Patch    : {patch.name}")
-            self.console.appendPlainText(f"Output   : {output.name}")
+            self._log("Applying patch…", "cmd")
+            self._log(f"Original : {orig.name}")
+            self._log(f"Patch    : {patch.name}")
+            self._log(f"Output   : {output.name}")
+            self._set_status("Decoding…", "busy")
+            self._set_progress(0)
+            self._start_progress_timer()
 
-        self.console.appendPlainText("-" * 60)
+        self._log("-" * 40)
         self.runner.run(args)
 
+    def _on_runner_output(self, text: str) -> None:
+        lower = text.lower()
+        if "error" in lower or "failed" in lower:
+            self._log(text, "error")
+        elif "success" in lower or "finished successfully" in lower:
+            self._log(text, "ok")
+        elif text.startswith("Running:"):
+            self._log(text, "cmd")
+        else:
+            self._log(text)
+
     def _finished(self, exit_code: int) -> None:
-        self.progress.setRange(0, 100)
-        self.progress.setValue(100)
+        self._stop_progress_timer()
+        self.action_btn.setEnabled(True)
 
         if exit_code != 0:
-            QMessageBox.critical(self, "Failed", "xdelta process failed. Check the console log.")
+            self._set_progress(0)
+            self._set_status("Failed", "error")
+            self._log(f"Failed (exit {exit_code})", "error")
+            QMessageBox.critical(
+                self, "Failed", "xdelta process failed. Check the log for details."
+            )
             return
 
-        # Copy common sidecar files (cue, ccd, etc.) when applying
+        self._set_progress(100)
+        self._set_status("Done", "ok")
+
         if self.mode == "apply" and self.output_path:
             copied = copy_sidecar_files(
                 Path(self.orig_edit.text().strip()), self.output_path
             )
             for p in copied:
-                self.console.appendPlainText(f"Sidecar copied → {p.name}")
+                self._log(f"Sidecar → {p.name}", "ok")
 
-        QMessageBox.information(self, "Success", "Operation completed successfully.")
+        self._log("Done.", "ok")
+        QMessageBox.information(self, "Success", "Operation completed.")
         if self.output_path and self.output_path.parent.exists():
             QDesktopServices.openUrl(
                 QUrl.fromLocalFile(str(self.output_path.parent))
             )
 
-    # ------------------------------------------------------------- Helpers
+    # ========================================================== Checksums
     def _on_checksum(self) -> None:
         path_str = self.orig_edit.text().strip()
         if not path_str:
@@ -327,113 +547,102 @@ class XPatchWindow(QWidget):
             QMessageBox.critical(self, "Checksum", "Original file not found.")
             return
 
-        self.console.appendPlainText(f"Calculating checksums for {path.name}…")
+        self._log(f"Checksums: {path.name}")
+        self._set_status("Hashing…", "busy")
+        self._set_progress(0, indeterminate=True)
         try:
             md5 = calculate_hash(path, "md5")
             sha1 = calculate_hash(path, "sha1")
-            self.console.appendPlainText(f"MD5 : {md5}")
-            self.console.appendPlainText(f"SHA1: {sha1}")
+            self._log(f"MD5  {md5}", "ok")
+            self._log(f"SHA1 {sha1}", "ok")
+            self._set_status("Ready", "ok")
         except Exception as e:
-            self.console.appendPlainText(f"Checksum error: {e}")
+            self._log(f"Checksum error: {e}", "error")
+            self._set_status("Failed", "error")
+        finally:
+            self._set_progress(0)
 
     def _export_log(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(self, "Save Log", "", "Text Files (*.txt)")
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Save Log", "xpatch_log.txt", "Text Files (*.txt)"
+        )
         if path:
             Path(path).write_text(self.console.toPlainText(), encoding="utf-8")
+            self._log(f"Exported: {Path(path).name}", "ok")
 
-    # --------------------------------------------------------------- Dialogs
+    # ============================================================ Dialogs
     def show_help(self) -> None:
         dialog = QDialog(self)
-        dialog.setWindowTitle("xPatch Help")
-        dialog.setMinimumSize(680, 580)
+        dialog.setWindowTitle("Help")
+        dialog.setMinimumSize(560, 480)
         layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(12, 12, 12, 10)
+        layout.setSpacing(8)
         browser = QTextBrowser()
         browser.setOpenExternalLinks(True)
         browser.setHtml(
             f"""
-        <h2>xPatch v{VERSION}</h2>
+        <h3 style="color:#eee; margin:0 0 8px 0;">xPatch v{VERSION}</h3>
+        <p style="color:#888; margin:0 0 12px 0;">Create and apply xDelta patches for disk images and ROMs.</p>
 
-        <h3>What This Tool Does</h3>
-        <p>
-        Creates and applies <b>xDelta</b> binary patches for disk images and ROMs.
-        Supported file types include:
+        <p style="color:#666; font-size:11px; margin:0 0 4px 0;"><b style="color:#aaa;">FORMATS</b></p>
+        <p style="color:#888; margin:0 0 12px 0; font-size:12px;">
+          .bin .cue .iso .img .mdf .nrg .ccd .rom .gcm .chd .cso .wbfs .rvz
         </p>
-        <ul>
-          <li><code>.bin</code> / <code>.cue</code> (PlayStation, etc.)</li>
-          <li><code>.iso</code> (CD/DVD images)</li>
-          <li><code>.img</code>, <code>.mdf</code>, <code>.nrg</code>, <code>.ccd</code></li>
-          <li><code>.rom</code>, <code>.gcm</code>, <code>.chd</code>, <code>.cso</code>, <code>.wbfs</code>, <code>.rvz</code> …</li>
-        </ul>
 
-        <h3>Create Patch</h3>
-        <ol>
-          <li>Select the <b>Original</b> (clean) file</li>
-          <li>Select the <b>Modified</b> file</li>
-          <li>Choose where to save the <code>.xdelta</code> patch</li>
-          <li>Click <b>Create xDelta Patch</b></li>
+        <p style="color:#666; font-size:11px; margin:0 0 4px 0;"><b style="color:#aaa;">CREATE</b></p>
+        <ol style="color:#888; font-size:12px; margin:0 0 12px 0; padding-left:18px;">
+          <li>Original (clean) file</li>
+          <li>Modified file</li>
+          <li>Save location for .xdelta</li>
+          <li>Click Create</li>
         </ol>
 
-        <h3>Apply Patch</h3>
-        <ol>
-          <li>Select the <b>Original</b> (clean) file</li>
-          <li>Select the <code>.xdelta</code> / <code>.xd3</code> patch</li>
-          <li>Choose the output filename (e.g. <code>game_patched.iso</code>)</li>
-          <li>Click <b>Apply Patch</b></li>
+        <p style="color:#666; font-size:11px; margin:0 0 4px 0;"><b style="color:#aaa;">APPLY</b></p>
+        <ol style="color:#888; font-size:12px; margin:0 0 12px 0; padding-left:18px;">
+          <li>Original (clean) file</li>
+          <li>.xdelta / .xd3 patch</li>
+          <li>Output path</li>
+          <li>Click Apply</li>
         </ol>
-        <p>
-        When applying, common sidecar files (<code>.cue</code>, <code>.ccd</code>,
-        <code>.sub</code>, …) that sit next to the original are automatically
-        copied and renamed to match the output.
-        </p>
+        <p style="color:#666; font-size:12px;">Sidecars (.cue, .ccd, .sub…) are copied automatically.</p>
 
-        <h3>Checksum Verification</h3>
-        <p>
-        Use the <b>Calculate Checksums</b> button to verify your original file
-        (MD5 / SHA1) before patching. Incorrect base files will cause the patch
-        to fail or produce a broken result.
-        </p>
-
-        <h3>Drag &amp; Drop</h3>
-        <p>
-        You can drop files directly onto the window. Patch files
-        (<code>.xdelta</code> / <code>.xd3</code>) go into the patch field;
-        other supported images fill the next empty slot.
-        </p>
-
-        <h3>Resources</h3>
-        <p>
-          <a href="https://github.com/jmacd/xdelta">xDelta official repository</a><br>
-          <a href="{UPDATE_URL}">xPatch on GitHub</a>
-        </p>
-
-        <h3>License</h3>
-        <p>
-        This tool uses xdelta3 – please review its license.
-        xPatch GUI is provided as-is without warranty (MIT).
+        <p style="margin-top:12px;">
+          <a href="https://github.com/jmacd/xdelta" style="color:#3b82f6;">xDelta</a>
+          &nbsp;·&nbsp;
+          <a href="{UPDATE_URL}" style="color:#3b82f6;">xPatch</a>
         </p>
         """
         )
         layout.addWidget(browser)
         close_btn = QPushButton("Close")
+        close_btn.setObjectName("secondaryButton")
         close_btn.clicked.connect(dialog.close)
         layout.addWidget(close_btn)
         dialog.exec()
 
     def show_about(self) -> None:
         dialog = QDialog(self)
-        dialog.setWindowTitle("About xPatch")
-        dialog.setMinimumSize(280, 140)
+        dialog.setWindowTitle("About")
+        dialog.setFixedSize(280, 150)
         layout = QVBoxLayout(dialog)
-        label = QLabel(
-            f"<h2>xPatch</h2>"
-            f"Version {VERSION}<br>"
-            f"Developed by JeevesGB<br><br>"
-            f"Supports .bin · .iso · .img · .rom and more"
-        )
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setTextFormat(Qt.TextFormat.RichText)
-        layout.addWidget(label)
+        layout.setContentsMargins(16, 16, 16, 12)
+        layout.setSpacing(4)
+
+        title = QLabel("xPatch")
+        title.setObjectName("appTitle")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        ver = QLabel(f"v{VERSION}  ·  JeevesGB")
+        ver.setObjectName("appSubtitle")
+        ver.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        layout.addWidget(title)
+        layout.addWidget(ver)
+        layout.addStretch()
+
         close_btn = QPushButton("Close")
+        close_btn.setObjectName("secondaryButton")
         close_btn.clicked.connect(dialog.close)
         layout.addWidget(close_btn)
         dialog.exec()
