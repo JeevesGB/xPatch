@@ -1,2 +1,3 @@
 @echo off 
-python newver/main.py 
+python src/main.py 
+pause

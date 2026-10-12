@@ -4,3 +4,5 @@ build
 dist
 cpp/build
 resources_rc.py
+cpp
+.vscode
