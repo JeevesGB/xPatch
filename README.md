@@ -1,31 +1,38 @@
-# xPatch 
-![Version](https://img.shields.io/badge/version-0.1.25-blue) 
-![License](https://img.shields.io/badge/license-MIT-green) 
+# xPatch
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 ![GitHub issues](https://img.shields.io/github/issues/JeevesGB/xPatch)
 
-A simple GUI tool to **create and apply `.xDelta` patches**.
-
-This is the initial release **v0.1.25**.  
-[Download Release](https://github.com/JeevesGB/xPatch/releases/tag/xPatch0.1.25)
+A simple GUI tool to **create and apply `.xdelta` patches** for disk images and ROMs.
 
 ---
 
 ## Features
 
-- Create `.xDelta` patch files from original and modified game data.
-- Apply `.xDelta` patches to original game images.
-- Easy to use interface.
+- Create `.xdelta` patch files from an original and a modified file
+- Apply `.xdelta` / `.xd3` patches to produce a new image
+- Supports many common formats:
+  - `.bin` / `.cue` (PlayStation and others)
+  - `.iso` (CD/DVD images)
+  - `.img`, `.mdf`, `.nrg`, `.ccd`
+  - `.rom`, `.gcm`, `.chd`, `.cso`, `.wbfs`, `.rvz`, …
+- Automatic sidecar copying (`.cue`, `.ccd`, `.sub`, …) when applying a patch
+- MD5 / SHA1 checksum helper
+- Drag-and-drop support
+- Clean, themed PyQt6 interface
 
 ---
 
-## What is an `.xDelta` Patch?
+## What is an `.xdelta` Patch?
 
-`.xDelta` patches are **binary diff files** storing changes between two versions of a file.  
-They enable:
+`.xdelta` patches are **binary diff files** that store only the differences between two versions of a file.  
+They let you:
 
-- Distributing only the changes (much smaller than full ISOs)
-- Applying modifications without sharing copyrighted game data
-- Widely used in retro gaming and ROM hack communities
+- Distribute only the changes (much smaller than full ISOs / BINs)
+- Apply modifications without sharing copyrighted game data
+- Work with large disk images efficiently
+
+Widely used in retro-gaming and ROM-hacking communities.
 
 ---
 
@@ -34,18 +41,38 @@ They enable:
 ![GUI](img/p2.png)
 ![GUI](img/p3.png)
 
-## Requirements for developers
-- PyQt6
-- xDelta3.exe: create a tools folder and place inside.
+---
 
-## Building
-run build.bat
+## Requirements (developers)
+
+- Python 3.10+
+- PyQt6
+- `xdelta3` binary:
+  - Place `xdelta3.exe` (Windows) or `xdelta3` in a `tool/` folder next to the project, **or**
+  - Have `xdelta3` available on your system `PATH`
+
+## Running from source
+
+```bash
+cd newver
+python main.py
+```
+
+## Building a standalone executable
+
+```bash
+cd newver
+build.bat          # Windows (uses PyInstaller + xPatch.spec)
+```
+
+---
 
 ## Credits
 
 - xDelta3: https://github.com/jmacd/xdelta
 
-## Licence 
+## Licence
+
 This project is licensed under the MIT License.
 
 ###### JEJCo™

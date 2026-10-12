@@ -6,3 +6,4 @@ cpp/build
 resources_rc.py
 cpp
 .vscode
+__pycache__
